@@ -23,56 +23,91 @@ class TranslationController extends Controller
     {
         $input = trim($request->input('text'));
         $direction = $request->input('direction');
-        $translated = 'Not found';
-        $audio = null;
 
+        // Return empty if no input
         if (!$input) {
             return response()->json([
                 'translated' => '',
-                'audio' => null
+                'audio' => null,
+                'examples_fil' => [],
+                'examples_yba' => []
             ]);
         }
 
-        switch ($direction) {
-            case 'filipino_to_ybanag':
-                $translation = Translation::where('filipino_word', $input)
-                    ->where('is_visible', true) // ✅ only visible translations
+        // Split input into words and punctuation
+        preg_match_all('/\w+|[^\w\s]/u', $input, $matches);
+        $tokens = $matches[0];
+
+        $translatedTokens = [];
+        $examples_fil = [];
+        $examples_yba = [];
+        $audio = null;
+
+        foreach ($tokens as $token) {
+            // Keep punctuation as is
+            if (preg_match('/^[^\w]+$/u', $token)) {
+                $translatedTokens[] = $token;
+                continue;
+            }
+
+            $wordLower = mb_strtolower($token, 'UTF-8');
+            $translatedWord = $token;
+
+            // Lookup translation
+            $translation = null;
+            if ($direction === 'filipino_to_ybanag') {
+                $translation = \App\Models\Translation::whereRaw('LOWER(filipino_word) = ?', [$wordLower])
+                    ->where('is_visible', true)
                     ->first();
-                if ($translation) {
-                    $translated = $translation->ybanag_translation;
-                    $audio = $translation->pronunciation_audio; // MP3 filename
+            } else {
+                $translation = \App\Models\Translation::whereRaw('LOWER(ybanag_translation) = ?', [$wordLower])
+                    ->where('is_visible', true)
+                    ->first();
+            }
 
-                    // Log Ybanag word
-                    if (!empty($translated)) {
-                        TranslationLog::create([
-                            'ybanag_translation' => $translated
-                        ]);
-                    }
+            if ($translation) {
+                // Set translated word
+                if ($direction === 'filipino_to_ybanag') {
+                    $translatedWord = $translation->ybanag_translation;
+                    if ($translation->filipino_example_sentence) $examples_fil[$wordLower] = $translation->filipino_example_sentence;
+                    if ($translation->ybanag_example_sentence) $examples_yba[mb_strtolower($translatedWord, 'UTF-8')] = $translation->ybanag_example_sentence;
+                } else {
+                    $translatedWord = $translation->filipino_word;
+                    if ($translation->ybanag_example_sentence) $examples_yba[$wordLower] = $translation->ybanag_example_sentence;
+                    if ($translation->filipino_example_sentence) $examples_fil[mb_strtolower($translatedWord, 'UTF-8')] = $translation->filipino_example_sentence;
                 }
-                break;
 
-            case 'ybanag_to_filipino':
-                $translation = Translation::where('ybanag_translation', $input)->first();
-                if ($translation) {
-                    $translated = $translation->filipino_word;
-                    $audio = $translation->pronunciation_audio; // MP3 filename still used
-
-                    // ✅ Log Ybanag word (always log the Ybanag side)
-                    if (!empty($translation->ybanag_translation)) {
-                        TranslationLog::create([
-                            'ybanag_translation' => $translation->ybanag_translation
-                        ]);
-                    }
+                // Set first available audio
+                if (!$audio) {
+                    $audio = $translation->pronunciation_audio ?? null;
                 }
-                break;
 
-            default:
-                $translated = 'Invalid direction';
+                // ✅ Log Ybanag translation
+                TranslationLog::create([
+                    'ybanag_translation' => $translation->ybanag_translation
+                ]);
+            }
+
+            // Preserve original casing
+            if (mb_strtoupper($token, 'UTF-8') === $token) {
+                $translatedWord = mb_strtoupper($translatedWord, 'UTF-8');
+            } elseif (mb_strtolower($token, 'UTF-8') === $token) {
+                $translatedWord = mb_strtolower($translatedWord, 'UTF-8');
+            } elseif (ucfirst(mb_strtolower($token, 'UTF-8')) === $token) {
+                $translatedWord = ucfirst(mb_strtolower($translatedWord, 'UTF-8'));
+            }
+
+            $translatedTokens[] = $translatedWord;
         }
 
+        // Combine tokens into final translated text
+        $translated = preg_replace('/\s+/', ' ', implode(' ', $translatedTokens));
+
         return response()->json([
-            'translated' => $translated,
-            'audio' => $audio
+            'translated' => trim($translated),
+            'audio' => $audio,
+            'examples_fil' => $examples_fil,
+            'examples_yba' => $examples_yba
         ]);
     }
 
@@ -88,26 +123,32 @@ class TranslationController extends Controller
             return response()->json([]);
         }
 
-        // Determine the correct column based on direction
+        // Determine column to search
         switch ($direction) {
             case 'filipino_to_ybanag':
-                $suggestions = Translation::where('filipino_word', 'like', $query . '%')
-                    ->where('is_visible', true) // ✅ only visible translations
-                    ->limit(5)
-                    ->pluck('filipino_word');
+                $column = 'filipino_word';
                 break;
-
             case 'ybanag_to_filipino':
-                $suggestions = Translation::where('ybanag_translation', 'like', $query . '%')
-                    ->where('is_visible', true) // ✅ only visible translations
-                    ->limit(5)
-                    ->pluck('ybanag_translation');
+                $column = 'ybanag_translation';
                 break;
-
             default:
-                $suggestions = collect([]);
+                return response()->json([]);
         }
 
-        return response()->json($suggestions);
+        // Fetch suggestions
+        $suggestions = Translation::where($column, 'like', $query . '%')
+            ->where('is_visible', true)
+            ->pluck($column)
+            ->toArray();
+
+        // ✅ Filter logic (server-side)
+        $filtered = collect($suggestions)
+            ->map(fn($word) => trim($word))
+            ->filter(fn($word) => str_word_count($word) === 1) // one word only
+            ->unique() // remove duplicates
+            ->take(3)  // optional: limit to 5 suggestions
+            ->values(); // reindex
+
+        return response()->json($filtered);
     }
 }

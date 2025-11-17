@@ -27,7 +27,7 @@
             <li><i class='bx bx-chevron-right'></i></li>
             <li>
                 <a href="{{ route('admin.dictionary.index') }}" class="{{ request()->routeIs('admin.dictionary.index') ? 'active' : '' }}">
-                    Ybanag Words
+                    Dictionary
                 </a>
             </li>
         </ul>
@@ -39,7 +39,7 @@
 
         <!-- ✅ HEADER SECTION with FILTER BUTTON -->
         <div class="head d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <h3 class="mb-0">All Ybanag Words Entries ({{ $entries->total() }})</h3>
+            <h3 class="mb-0">All Dictionary Entries ({{ $entries->total() }})</h3>
 
             <!-- Filter dropdown -->
             <div class="dropdown">
@@ -76,9 +76,11 @@
                     <th>Filipino</th>
                     <th>Ybanag</th>
                     <th>Pronunciation</th>
-                    <th>English Example</th>
+                    <th>Part of Speech</th>
+                    <th>Tagalog Meaning</th>
+                    <!-- <th>English Example</th>
                     <th>Filipino Example</th>
-                    <th>Ybanag Example</th>
+                    <th>Ybanag Example</th> -->
                     <th>Visibility</th>
                 </tr>
             </thead>
@@ -88,9 +90,11 @@
                         <td>{{ $entry->filipino_word }}</td>
                         <td>{{ $entry->ybanag_translation }}</td>
                         <td><em>{{ $entry->pronunciation ?? '-' }}</em></td>
-                        <td>{{ $entry->english_example_sentence ?? '-' }}</td>
+                        <td>{{ $entry->part_of_speech ?? '-' }}</td>
+                        <td>{{ $entry->tagalog_meaning ?? '-' }}</td>
+                        <!-- <td>{{ $entry->english_example_sentence ?? '-' }}</td>
                         <td>{{ $entry->filipino_example_sentence ?? '-' }}</td>
-                        <td>{{ $entry->ybanag_example_sentence ?? '-' }}</td>
+                        <td>{{ $entry->ybanag_example_sentence ?? '-' }}</td> -->
                         <td class="text-center">
                             <button 
                                 class="toggle-visibility-btn border-0 rounded-circle d-flex align-items-center justify-content-center"
@@ -157,22 +161,6 @@
     .toggle-visibility-btn:hover {
         transform: scale(1.1);
         background-color: #d1e7dd !important;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-    }
-    th {
-        text-align: left;
-        padding: 10px;
-        background: #f8f9fa;
-        font-weight: 600;
-    }
-    td {
-        padding: 10px;
-        border-top: 1px solid #eee;
     }
 </style>
 

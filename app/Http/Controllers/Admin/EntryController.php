@@ -8,6 +8,7 @@ use App\Models\Entry;
 use App\Models\Dictionary;
 use App\Models\Translation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class EntryController extends Controller
 {
@@ -18,13 +19,12 @@ class EntryController extends Controller
     {
         $query = Entry::query();
 
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('filipino_word', 'LIKE', "%{$search}%")
-                  ->orWhere('ybanag_translation', 'LIKE', "%{$search}%")
-                  ->orWhere('english_example_sentence', 'LIKE', "%{$search}%")
-                  ->orWhere('filipino_example_sentence', 'LIKE', "%{$search}%")
-                  ->orWhere('ybanag_example_sentence', 'LIKE', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('filipino_word', 'LIKE', "%{$search}%")
+                ->orWhere('ybanag_translation', 'LIKE', "%{$search}%");
+            });
         }
 
         $entries = $query->latest()->paginate(10);
@@ -42,6 +42,8 @@ class EntryController extends Controller
             'ybanag_translation' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
             'pronunciation_audio' => 'nullable|mimes:mp3,wav,ogg|max:10240',
+            'part_of_speech' => 'nullable|string|max:255',
+            'tagalog_meaning' => 'nullable|string',
             'english_example_sentence' => 'nullable|string',
             'filipino_example_sentence' => 'nullable|string',
             'ybanag_example_sentence' => 'nullable|string',
@@ -60,10 +62,13 @@ class EntryController extends Controller
 
             // Save to dictionary
             Dictionary::create([
+                'entry_id' => $entry->id,
                 'filipino_word' => $data['filipino_word'],
                 'ybanag_translation' => $data['ybanag_translation'],
                 'pronunciation' => $data['pronunciation'] ?? null,
                 'pronunciation_audio' => $data['pronunciation_audio'] ?? null,
+                'part_of_speech' => $data['part_of_speech'] ?? null,
+                'tagalog_meaning' => $data['tagalog_meaning'] ?? null,
                 'english_example_sentence' => $data['english_example_sentence'] ?? null,
                 'filipino_example_sentence' => $data['filipino_example_sentence'] ?? null,
                 'ybanag_example_sentence' => $data['ybanag_example_sentence'] ?? null,
@@ -71,9 +76,12 @@ class EntryController extends Controller
 
             // Save to translations
             Translation::create([
+                'entry_id' => $entry->id,
                 'filipino_word' => $data['filipino_word'],
                 'ybanag_translation' => $data['ybanag_translation'],
                 'pronunciation_audio' => $data['pronunciation_audio'] ?? null,
+                'filipino_example_sentence' => $data['filipino_example_sentence'] ?? null,
+                'ybanag_example_sentence' => $data['ybanag_example_sentence'] ?? null,
             ]);
         });
 
@@ -101,6 +109,8 @@ class EntryController extends Controller
             'ybanag_translation' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
             'pronunciation_audio' => 'nullable|mimes:mp3,wav,ogg|max:10240',
+            'part_of_speech' => 'nullable|string|max:255',
+            'tagalog_meaning' => 'nullable|string',
             'english_example_sentence' => 'nullable|string',
             'filipino_example_sentence' => 'nullable|string',
             'ybanag_example_sentence' => 'nullable|string',
@@ -112,30 +122,34 @@ class EntryController extends Controller
             $data['pronunciation_audio'] = $request->file('pronunciation_audio')->store('audio', 'public');
         }
 
-        $originalFilipinoWord = $entry->filipino_word;
+        // $originalFilipinoWord = $entry->filipino_word;
 
-        DB::transaction(function() use ($entry, $data, $originalFilipinoWord) {
+        DB::transaction(function() use ($entry, $data) {
             // Update main entry
             $entry->update($data);
 
             // Update dictionary
-            Dictionary::where('filipino_word', $originalFilipinoWord)
+            Dictionary::where('entry_id', $entry->id)
                       ->update([
                           'filipino_word' => $data['filipino_word'],
                           'ybanag_translation' => $data['ybanag_translation'],
                           'pronunciation' => $data['pronunciation'] ?? null,
                           'pronunciation_audio' => $data['pronunciation_audio'] ?? $entry->pronunciation_audio,
+                          'part_of_speech' => $data['part_of_speech'] ?? null,
+                          'tagalog_meaning' => $data['tagalog_meaning'] ?? null,
                           'english_example_sentence' => $data['english_example_sentence'] ?? null,
                           'filipino_example_sentence' => $data['filipino_example_sentence'] ?? null,
                           'ybanag_example_sentence' => $data['ybanag_example_sentence'] ?? null,
                       ]);
 
             // Update translations
-            Translation::where('filipino_word', $originalFilipinoWord)
+            Translation::where('entry_id', $entry->id)
                        ->update([
-                           'filipino_word' => $data['filipino_word'],
-                           'ybanag_translation' => $data['ybanag_translation'],
-                           'pronunciation_audio' => $data['pronunciation_audio'] ?? $entry->pronunciation_audio,
+                            'filipino_word' => $data['filipino_word'],
+                            'ybanag_translation' => $data['ybanag_translation'],
+                            'pronunciation_audio' => $data['pronunciation_audio'] ?? $entry->pronunciation_audio,
+                            'filipino_example_sentence' => $data['filipino_example_sentence'] ?? null,
+                            'ybanag_example_sentence' => $data['ybanag_example_sentence'] ?? null,
                        ]);
         });
 
@@ -150,8 +164,13 @@ class EntryController extends Controller
         $entry = Entry::findOrFail($id);
 
         DB::transaction(function() use ($entry) {
-            Dictionary::where('filipino_word', $entry->filipino_word)->delete();
-            Translation::where('filipino_word', $entry->filipino_word)->delete();
+            Dictionary::where('entry_id', $entry->id)->delete();
+            Translation::where('entry_id', $entry->id)->delete();
+
+            if ($entry->pronunciation_audio && Storage::disk('public')->exists($entry->pronunciation_audio) ) {
+                Storage::disk('public')->delete($entry->pronunciation_audio);
+            }
+
             $entry->delete();
         });
 

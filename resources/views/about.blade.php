@@ -48,6 +48,10 @@
         </div>
         <div class="card-body text-dark" style="font-size: 1rem;">
             <div class="row">
+                @php
+                    use Illuminate\Support\Str;
+                @endphp
+
                 @foreach ($team as $member)
                     @php
                         // Determine the correct image path
@@ -57,7 +61,7 @@
                     @endphp
 
                     <div class="col-md-6 col-lg-3 mb-4">
-                        <div class="card h-100 text-center border-0 p-3">
+                        <div class="card h-100 text-center border-0 p-3 about-section-card">
 
                             <!-- Profile Image -->
                             <div class="mb-3">
@@ -248,13 +252,21 @@
     .icon-link.phone:hover { color: #28a745; }
     .icon-link.fb:hover { color: #1877f2; }
 
+    .about-section-card {
+        transition: 0.3s ease;
+    }
+
     /* Card hover effect */
-    .card:hover {
+    .about-section-card:hover {
         transform: translateY(-5px);
         transition: 0.3s;
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
+
+    .email {
+        word-break: break-all;
+        display: inline-block;
+        max-width: 100%;
+    }
 </style>
 @endpush
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

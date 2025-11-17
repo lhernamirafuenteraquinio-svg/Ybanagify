@@ -45,6 +45,7 @@
                 </div>
             </label>
             <textarea id="inputText" class="form-control" placeholder="Type or paste text here..."></textarea>
+            <div id="exampleInput" class="mt-3 text-secondary"></div>
             <ul id="suggestionsBox" class="suggestions-box"></ul>
         </div>
 
@@ -59,10 +60,10 @@
                     <button class="btn btn-sm btn-outline-secondary me-1" onclick="copyText('outputText')" title="Copy Translation">
                         <i class="bi bi-clipboard"></i>
                     </button>
-
                 </div>
             </label>
             <textarea id="outputText" class="form-control" readonly placeholder="Translation will appear here..."></textarea>
+            <div id="exampleOutput" class="mt-3 text-secondary"></div>
         </div>
     </div>
 </div>
@@ -80,11 +81,12 @@
 
 @push('styles')
 <style>
-        .container {
+    .container {
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
     }
+
     .translator-container {
         gap: 20px;
     }
@@ -118,7 +120,7 @@
 
     .suggestions-box {
         position: absolute;
-        bottom: 12px;
+        bottom: 150px;
         left: 16px;
         right: 16px;
         display: flex;
@@ -127,25 +129,38 @@
         font-size: 0.85rem;
         color: #6c757d;
         pointer-events: auto;
-        z-index: 1;
+        z-index: 10;
+        padding: 6px 16px;
+        
     }
 
     .suggestions-box span {
         background-color: #f1f1f1;
-        padding: 2px 6px;
+        padding: 4px 6px;
         border-radius: 12px;
         cursor: pointer;
-        transition: background-color 0.2s;
-        font-style: italic;
+        transition: background-color 0.2s, border-color 0.2s;
+        border: 1px solid transparent;
+        margin-right: 5px;
+        margin-bottom: 5px;
     }
 
     .suggestions-box span:hover {
         background-color: #d9d9d9;
+        border-color: #3498db;
     }
 
     @media (max-width: 768px) {
         .translator-box {
             flex: 1 1 100%;
+        }
+
+        .suggestions-box {
+            font-size: 0.8rem;
+            padding: 6px 16px;
+        }
+        .suggestions-box span {
+            padding: 4px 6px;
         }
     }
 
@@ -170,32 +185,149 @@
     const inputText = document.getElementById('inputText');
     const outputText = document.getElementById('outputText');
     const directionInput = document.getElementById('direction');
-    const directionLabel = document.getElementById('directionLabel');
     const suggestionsBox = document.getElementById('suggestionsBox');
 
+    let typingTimer;
+    const typingDelay = 300; // delay para hindi sabay-sabay request
+
     inputText.addEventListener('input', () => {
-        translateText();
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(() => {
+            translateText();
+            fetchSuggestions();
+        }, typingDelay);
     });
 
-    function translateText() {
-        fetch("{{ route('ajax.translate') }}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                text: inputText.value,
-                direction: directionInput.value
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
+    async function translateText() {
+        try {
+            const response = await fetch("{{ route('ajax.translate') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    text: inputText.value,
+                    direction: directionInput.value
+                })
+            });
+
+            const data = await response.json();
             outputText.value = data.translated;
             window.translationAudio = data.audio || null;
-        });
+
+            if (data.translated && data.translated.trim() !== '' && data.translated !== 'Not found') {
+                suggestionsBox.style.display = 'none';
+            }
+
+            const exampleInput = document.getElementById('exampleInput');
+            const exampleOutput = document.getElementById('exampleOutput');
+
+            function highlightWords(sentence, wordsObj) {
+                if (!sentence) return '';
+                let highlighted = sentence;
+                const highlightedSet = new Set();
+
+                for (const word in wordsObj) {
+                    const lowerWord = word.toLowerCase();
+                    if (highlightedSet.has(lowerWord)) continue;
+
+                    const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const regex = new RegExp(`(${escapedWord})`, 'gi');
+                    highlighted = highlighted.replace(regex, (match) => {
+                        highlightedSet.add(match.toLowerCase());
+                        return `<mark>${match}</mark>`;
+                    });
+                }
+
+                return highlighted;
+            }
+
+            // Example sentences display
+            if (directionInput.value === 'filipino_to_ybanag') {
+                exampleInput.innerHTML = Object.keys(data.examples_fil).length
+                    ? `<strong>Filipino Examples:</strong><br>${Object.values(data.examples_fil)
+                        .map(sentence => highlightWords(sentence, data.examples_fil))
+                        .join('<br>')}` : '';
+                exampleOutput.innerHTML = Object.keys(data.examples_yba).length
+                    ? `<strong>Ybanag Examples:</strong><br>${Object.values(data.examples_yba)
+                        .map(sentence => highlightWords(sentence, data.examples_yba))
+                        .join('<br>')}` : '';
+            } else {
+                exampleInput.innerHTML = Object.keys(data.examples_yba).length
+                    ? `<strong>Ybanag Examples:</strong><br>${Object.values(data.examples_yba)
+                        .map(sentence => highlightWords(sentence, data.examples_yba))
+                        .join('<br>')}` : '';
+                exampleOutput.innerHTML = Object.keys(data.examples_fil).length
+                    ? `<strong>Filipino Examples:</strong><br>${Object.values(data.examples_fil)
+                        .map(sentence => highlightWords(sentence, data.examples_fil))
+                        .join('<br>')}` : '';
+            }
+        } catch (err) {
+            console.error('Translation error:', err);
+        }
     }
 
+    async function fetchSuggestions() {
+        const query = inputText.value.trim();
+
+        if (query.length < 2) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch("{{ route('ajax.suggestions') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    query: query,
+                    direction: directionInput.value
+                })
+            });
+
+            const suggestions = await response.json();
+
+            if (!suggestions.length || !query) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            if (suggestions.some(word => word.toLowerCase() === query.toLowerCase())) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            suggestionsBox.innerHTML = '';
+            suggestionsBox.style.display = 'block';
+
+            suggestions.forEach(word => {
+                const span = document.createElement('span');
+                span.textContent = word;
+                span.addEventListener('click', () => {
+                    inputText.value = word;
+                    suggestionsBox.style.display = 'none';
+                    translateText();
+                });
+                suggestionsBox.appendChild(span);
+            });
+        } catch (error) {
+            suggestionsBox.style.display = 'none';
+        }
+    }
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (event) => {
+        if (!inputText.contains(event.target) && !suggestionsBox.contains(event.target)) {
+            suggestionsBox.style.display = 'none';
+        }
+    });
+
+    // Swap direction
     function swapDirection() {
         if (directionInput.value === 'filipino_to_ybanag') {
             directionInput.value = 'ybanag_to_filipino';
@@ -214,57 +346,7 @@
         translateText();
     }
 
-    // Listen to input and fetch suggestions
-    inputText.addEventListener('input', () => {
-        const query = inputText.value.trim();
-        translateText();
-
-        if (query.length < 2) {
-            suggestionsBox.style.display = 'none';
-            return;
-        }
-
-        fetch("{{ route('ajax.suggestions') }}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                query: query,
-                direction: directionInput.value
-            })
-        })
-        .then(response => response.json())
-        .then(suggestions => {
-            suggestionsBox.innerHTML = '';
-            if (suggestions.length > 0) {
-                suggestionsBox.style.display = 'block';
-                suggestions.forEach(word => {
-                const span = document.createElement('span');
-                span.textContent = word;
-                span.addEventListener('click', () => {
-                    inputText.value = word;
-                    suggestionsBox.innerHTML = '';
-                    translateText();
-                });
-                suggestionsBox.appendChild(span);
-            });
-
-            } else {
-                suggestionsBox.style.display = 'none';
-            }
-        });
-    });
-
-    // Hide suggestions when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!inputText.contains(event.target) && !suggestionsBox.contains(event.target)) {
-            suggestionsBox.style.display = 'none';
-        }
-    });
-
-
+    // Speech features
     function speakInput() {
         if (directionInput.value === 'filipino_to_ybanag') {
             const utterance = new SpeechSynthesisUtterance(inputText.value);
@@ -291,6 +373,7 @@
         audio.play();
     }
 
+    // Copy & clear
     function copyText(id) {
         const text = document.getElementById(id).value;
         navigator.clipboard.writeText(text).then(() => {
@@ -304,7 +387,7 @@
         if (id === 'inputText') translateText();
     }
 
-     // Speech-to-Text for Input
+    // Speech recognition
     const recordInputBtn = document.getElementById('recordInputBtn');
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -314,7 +397,6 @@
         recognition.maxAlternatives = 1;
 
         recordInputBtn.addEventListener('click', () => {
-            // Toggle recording visual
             recordInputBtn.classList.add('recording');
             recognition.start();
         });
@@ -326,7 +408,6 @@
         };
 
         recognition.onend = () => {
-            // Remove recording visual when done
             recordInputBtn.classList.remove('recording');
         };
 

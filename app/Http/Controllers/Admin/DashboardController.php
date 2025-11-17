@@ -36,7 +36,7 @@ class DashboardController extends Controller
                 'filipino' => $item->filipino_word,
                 'ybanag' => $item->ybanag_translation,
                 'added_by' => 'Admin',
-                'entry_type' => 'Ybanag Word',
+                'entry_type' => 'Dictionary',
                 'created_at' => $item->created_at,
             ];
         });

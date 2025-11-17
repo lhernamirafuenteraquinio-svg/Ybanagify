@@ -141,7 +141,7 @@ const chartOptions = {
 new Chart(document.getElementById('entriesChart'), {
     type: 'pie',
     data: {
-        labels: ['Translations', 'Ybanag Words'],
+        labels: ['Translations', 'Dictionary'],
         datasets: [{
             data: [{{ $translationCount }}, {{ $dictionaryCount }}],
             backgroundColor: ['#4e73df', '#1cc88a'],
@@ -199,7 +199,7 @@ new Chart(document.getElementById('topYbanagChart'), {
 new Chart(document.getElementById('systemChart'), {
     type: 'bar',
     data: {
-        labels: ['Translations', 'Ybanag Words', 'Visitors'],
+        labels: ['Translations', 'Dictionary', 'Visitors'],
         datasets: [{
             label: 'Total Count',
             data: [{{ $translationCount }}, {{ $dictionaryCount }}, {{ $visitorLogCount }}],

@@ -54,16 +54,16 @@
                                 <td>{{ $submission->ybanag_translation }}</td>
                                 <td>{{ $submission->submitted_by ?? '-' }}</td>
                                 <td>{{ $submission->submitted_email ?? '-' }}</td>
-                                <td class="text-center">
+                                <td>
                                     <span class="badge 
                                         {{ $submission->status === 'pending' ? 'bg-warning text-dark' : 
                                            ($submission->status === 'approved' ? 'bg-success' : 'bg-danger') }}">
                                         {{ ucfirst($submission->status) }}
                                     </span>
                                 </td>
-                                <td>{{ $submission->created_at->format('Y-m-d H:i') }}</td>
-                                <td class="text-center">
-                                    <div class="d-flex gap-1 justify-content-center">
+                                <td>{{ $submission->created_at->diffForHumans() }}</td>
+                                <td>
+                                    <div class="d-flex gap-1">
                                         @if($submission->status === 'pending')
                                             <form method="POST" action="{{ route('admin.submissions.approve', $submission->id) }}">
                                                 @csrf

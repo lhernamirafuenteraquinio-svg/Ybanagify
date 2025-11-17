@@ -97,6 +97,10 @@
 					<p>Add new audio recordings</p>
 					
 				</li>
+				<li class="not-completed">
+					<p>Update/Approve new entries</p>
+
+				</li>
                  <li class="completed">
                     <p>Monitor visitor logs</p>
                    

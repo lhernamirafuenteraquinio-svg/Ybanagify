@@ -64,6 +64,11 @@
         <hr>
         <!-- Menu Links -->
         <li>
+            <a href="{{ route('admin.backup.index') }}">
+                <i class='bx bxs-shield'></i> Backup & Maintenance
+            </a>
+        </li>
+        <li>
             <a href="{{ route('profile.edit') }}">
                 <i class='bx bxs-cog'></i> Settings
             </a>

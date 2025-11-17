@@ -27,7 +27,7 @@
             <li><i class='bx bx-chevron-right'></i></li>
             <li>
                 <a href="{{ route('admin.dictionary.index') }}" class="{{ request()->routeIs('admin.dictionary.index') ? 'active' : '' }}">
-                    Ybanag Words
+                    Dictionary
                 </a>
             </li>
         </ul>
@@ -160,22 +160,6 @@
     .toggle-visibility-btn:hover {
         transform: scale(1.1);
         background-color: #d1e7dd !important;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-    }
-    th {
-        text-align: left;
-        padding: 10px;
-        background: #f8f9fa;
-        font-weight: 600;
-    }
-    td {
-        padding: 10px;
-        border-top: 1px solid #eee;
     }
 </style>
 

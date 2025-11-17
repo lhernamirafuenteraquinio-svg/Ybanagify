@@ -26,7 +26,7 @@
             <li><i class='bx bx-chevron-right'></i></li>
             <li>
                 <a href="{{ route('admin.dictionary.index') }}" class="{{ request()->routeIs('admin.dictionary.index') ? 'active' : '' }}">
-                    Ybanag Words
+                    Dictionary
                 </a>
             </li>
         </ul>
@@ -37,10 +37,26 @@
     <div class="order">
         <div class="head">
             <h3>All Entries ({{ $entries->total() }})</h3>
+            
+            <!-- ✅ Search form -->
+            <form id="search-form" class="d-flex mt-2 mt-sm-0" role="search">
+                <input type="text" 
+                       id="search-input"
+                       name="search" 
+                       class="form-control me-2" 
+                       placeholder="Search Filipino or Ybanag..." 
+                       style="max-width: 250px;">
+                <button class="btn btn-secondary" type="submit">
+                    <i class='bx bx-search'></i>
+                </button>
+            </form>
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success mt-3">{{ session('success') }}</div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bx bx-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         @endif
 
         <!-- Add New Entry button -->
@@ -56,6 +72,8 @@
                     <th>Ybanag</th>
                     <th>Pronunciation</th>
                     <th>Audio</th>
+                    <th>Part of Speech</th>
+                    <th>Tagalog Meaning</th>
                     <th>English Example</th>
                     <th>Filipino Example</th>
                     <th>Ybanag Example</th>
@@ -77,6 +95,8 @@
                                 —
                             @endif
                         </td>
+                        <td>{{ $entry->part_of_speech ?? '-' }}</td>
+                        <td>{{ $entry->tagalog_meaning ?? '-' }}</td>
                         <td>{{ $entry->english_example_sentence ?? '-' }}</td>
                         <td>{{ $entry->filipino_example_sentence ?? '-' }}</td>
                         <td>{{ $entry->ybanag_example_sentence ?? '-' }}</td>
@@ -118,6 +138,26 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('search-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const query = document.getElementById('search-input').value;
+
+    const response = await fetch(`{{ route('admin.entries.index') }}?search=${encodeURIComponent(query)}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    const html = await response.text();
+
+    // Extract only the table body from returned HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const newTbody = doc.querySelector('tbody');
+    
+    document.querySelector('tbody').innerHTML = newTbody.innerHTML;
+});
+</script>
 
 <!-- Create Modal -->
 @include('admin.entries.partials.create-modal')

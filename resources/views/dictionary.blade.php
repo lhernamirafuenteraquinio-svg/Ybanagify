@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container py-5">
-    <h1 class="text-center text-dark display-5 fw-bold"><i class="bi bi-book"></i> Collected Ybanag Words</h1>
+    <h1 class="text-center text-dark display-5 fw-bold"><i class="bi bi-book"></i> Ybanag Dictionary</h1>
 
     <!-- 🔤 Alphabet Filter -->
     <div class="mb-4">
@@ -80,6 +80,23 @@
 
                                         <div id="{{ $collapseId }}" class="collapse">
                                             <div class="card-body text-dark">
+                                                <p>
+                                                    <i class="bi bi-book me-1"></i>
+                                                    @if($entry->part_of_speech || $entry->tagalog_meaning)
+                                                        <strong>
+                                                            @if($entry->part_of_speech)
+                                                                [{{ ucfirst($entry->part_of_speech) }}]
+                                                            @endif
+                                                            {{ ucfirst($entry->filipino_word) }}
+                                                        </strong>
+                                                        @if ($entry->tagalog_meaning)
+                                                            : {{ $entry->tagalog_meaning }}
+                                                        @endif
+                                                    @else
+                                                        <strong class="text-capitalize">{{ $entry->filipino_word }}</strong>
+                                                    @endif
+                                                </p>
+
                                                 <p><i class="bi bi-translate me-1"></i>
                                                     Ybanag: <strong class="text-capitalize">{{ $entry->ybanag_translation }}</strong>
                                                 </p>
@@ -125,7 +142,7 @@
                                                 @if ($entry->english_example_sentence || $entry->filipino_example_sentence || $entry->ybanag_example_sentence)
                                                     <hr>
                                                     <h6 class="fw-bold">
-                                                        <i class="bi bi-chat-left-text me-1"></i>Example Sentences:
+                                                        <i class="bi bi-chat-left-text me-1"></i> Example Sentences:
                                                     </h6>
 
                                                     @if ($entry->english_example_sentence)
@@ -161,9 +178,10 @@
     </button>
 
     <!-- ✏️ Floating Contribute Button -->
-    <a href="#" class="btn btn-primary btn-lg rounded-circle shadow position-fixed"
-       style="bottom: 30px; right: 30px; z-index: 1060;"
-       data-bs-toggle="modal" data-bs-target="#contributeModal">
+    <a href="#" 
+    class="btn btn-primary btn-lg rounded-circle shadow position-fixed contribute-btn"
+    style="bottom: 30px; right: 30px; z-index: 1060;"
+    data-bs-toggle="modal" data-bs-target="#contributeModal">
         <i class="bi bi-pencil-square"></i>
     </a>
 </div>
@@ -280,15 +298,31 @@
 @endif
 @endsection
 
-@section('styles')
+@push('styles')
 <style>
-    .dictionary-card { transition: transform 0.2s ease; }
-    .toggle-icon { font-size: 1.1rem; transition: transform 0.3s ease; }
-    .dictionary-card:hover { transform: scale(1.01); }
-    .btn:focus { box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25); }
-    .modal-body { max-height: 60vh; overflow-y: auto; }
+    /* ✏️ Animated Contribute Button */
+    .contribute-btn {
+        animation: floatGlow 3s ease-in-out infinite;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .contribute-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(13,110,253,0.8);
+    }
+
+    @keyframes floatGlow {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+            box-shadow: 0 0 0 rgba(13,110,253,0);
+        }
+        50% {
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 0 20px rgba(13,110,253,0.6);
+        }
+    }
 </style>
-@endsection
+@endpush
 
 @push('scripts')
 <script>
@@ -404,6 +438,35 @@ document.addEventListener('DOMContentLoaded', function () {
     const contributeModal = document.getElementById('contributeModal');
     contributeModal.addEventListener('hidden.bs.modal', function () {
         contributeModal.querySelector('form').reset();
+    });
+
+    /* -------------------------------
+    * ✏️ HIDE CONTRIBUTION BUTTON WHEN MODAL IS OPEN
+    * ----------------------------- */
+    const contributeBtn = document.querySelector('.contribute-btn');
+    if (contributeBtn && contributeModal) {
+        contributeModal.addEventListener('show.bs.modal', () => {
+            contributeBtn.style.display = 'none';
+        });
+        contributeModal.addEventListener('hidden.bs.modal', () => {
+            contributeBtn.style.display = 'block';
+        });
+    }
+
+    /* -------------------------------
+    * 🚫 ONE-WORD VALIDATION FOR FILIPINO WORD
+    * ----------------------------- */
+    const contributeForm = document.querySelector('#contributeModal form');
+    const filipinoWordInput = contributeForm.querySelector('input[name="filipino_word"]');
+
+    contributeForm.addEventListener('submit', function (e) {
+        const value = filipinoWordInput.value.trim();
+
+        if (/\s/.test(value)) {
+            e.preventDefault();
+            alert('The Filipino word must be one word only (no spaces).');
+            filipinoWordInput.focus();
+        }
     });
 
     /* -------------------------------

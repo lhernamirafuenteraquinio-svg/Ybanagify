@@ -30,6 +30,26 @@
                             <input type="file" name="pronunciation_audio" class="form-control" accept=".mp3,.wav,.ogg">
                         </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bx bx-category me-1"></i>Part of Speech</label>
+                            <select name="part_of_speech" class="form-select">
+                                <option value="">Select...</option>
+                                <option value="noun">Noun</option>
+                                <option value="verb">Verb</option>
+                                <option value="adjective">Adjective</option>
+                                <option value="adverb">Adverb</option>
+                                <option value="pronoun">Pronoun</option>
+                                <option value="preposition">Preposition</option>
+                                <option value="conjunction">Conjunction</option>
+                                <option value="interjection">Interjection</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bx bx-book-open me-1"></i>Tagalog Meaning</label>
+                            <input type="text" name="tagalog_meaning" class="form-control" value="{{ old('tagalog_meaning') }}">
+                        </div>
+
                         <div class="col-md-12">
                             <label class="form-label fw-bold"><i class="bx bx-book me-1"></i>English Example Sentence</label>
                             <textarea name="english_example_sentence" class="form-control" rows="2">{{ old('english_example_sentence') }}</textarea>

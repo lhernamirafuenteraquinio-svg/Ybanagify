@@ -33,8 +33,9 @@
 
             {{-- Success Alert --}}
             @if(session('success'))
-                <div class="alert alert-success">
-                    {{ session('success') }}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bx bx-check-circle me-2"></i>{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
 
@@ -58,7 +59,7 @@
                                 <td><a href="mailto:{{ $feedback->email }}">{{ $feedback->email }}</a></td>
                                 <td>{{ $feedback->category ?? 'General' }}</td>
                                 <td>{{ Str::limit($feedback->message, 50) }}</td>
-                                <td>{{ $feedback->deleted_at->format('M d, Y h:i A') }}</td>
+                                <td>{{ $feedback->deleted_at->diffForHumans() }}</td>
                                 <td>
                                     {{-- Restore Button --}}
                                     <form action="{{ route('admin.feedbacks.restore', $feedback->id) }}" method="POST" onsubmit="return confirm('Restore this feedback?');">

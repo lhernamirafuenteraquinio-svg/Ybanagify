@@ -12,9 +12,17 @@ class Translation extends Model
     protected $table = 'translations';  // Make sure the table name matches
 
     protected $fillable = [
+        'entry_id',
         'filipino_word',
         'ybanag_translation',
         'pronunciation_audio',
+        'filipino_example_sentence',
+        'ybanag_example_sentence',
         'is_visible',
     ];
+
+    public function entry()
+    {
+        return $this->belongsTo(Entry::class, 'entry_id');
+    }
 }

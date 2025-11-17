@@ -41,6 +41,26 @@
                             <small class="text-muted">Leave blank to keep current audio.</small>
                         </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bx bx-category me-1"></i>Part of Speech</label>
+                            <select name="part_of_speech" class="form-select">
+                                <option value="">Select...</option>
+                                <option value="noun" {{ $entry->part_of_speech == 'noun' ? 'selected' : '' }}>Noun</option>
+                                <option value="verb" {{ $entry->part_of_speech == 'verb' ? 'selected' : '' }}>Verb</option>
+                                <option value="adjective" {{ $entry->part_of_speech == 'adjective' ? 'selected' : '' }}>Adjective</option>
+                                <option value="adverb" {{ $entry->part_of_speech == 'adverb' ? 'selected' : '' }}>Adverb</option>
+                                <option value="pronoun" {{ $entry->part_of_speech == 'pronoun' ? 'selected' : '' }}>Pronoun</option>
+                                <option value="preposition" {{ $entry->part_of_speech == 'preposition' ? 'selected' : '' }}>Preposition</option>
+                                <option value="conjunction" {{ $entry->part_of_speech == 'conjunction' ? 'selected' : '' }}>Conjunction</option>
+                                <option value="interjection" {{ $entry->part_of_speech == 'interjection' ? 'selected' : '' }}>Interjection</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bx bx-book-open me-1"></i>Tagalog Meaning</label>
+                            <input type="text" name="tagalog_meaning" class="form-control" value="{{ $entry->tagalog_meaning }}">
+                        </div>
+
                         <div class="col-md-12">
                             <label class="form-label fw-bold"><i class="bx bx-book me-1"></i>English Example Sentence</label>
                             <textarea name="english_example_sentence" class="form-control" rows="2">{{ $entry->english_example_sentence }}</textarea>

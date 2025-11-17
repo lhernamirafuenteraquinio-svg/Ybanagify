@@ -14,7 +14,7 @@ class SubmissionController extends Controller
 {
     public function index()
     {
-        $submissions = Submission::orderBy('created_at', 'desc')->paginate(15);
+        $submissions = Submission::latest()->paginate(10);
         return view('admin.submissions.index', compact('submissions'));
     }
 

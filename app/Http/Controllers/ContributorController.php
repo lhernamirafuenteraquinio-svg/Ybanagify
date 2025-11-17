@@ -10,7 +10,7 @@ class ContributorController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'filipino_word' => 'required|string|max:255',
+            'filipino_word' => ['required', 'string', 'max:255', 'regex:/^[^\s]+$/'],
             'ybanag_translation' => 'required|string|max:255',
             'pronunciation' => 'nullable|string|max:255',
             'pronunciation_audio' => 'nullable|file|mimes:mp3,wav|max:10240', 

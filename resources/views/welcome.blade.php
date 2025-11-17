@@ -125,7 +125,7 @@
             <div class="col-md-4">
                 <div class="bg-white p-4 rounded-4 shadow-sm h-100 border-top border-4 border-sienna">
                     <img src="{{ asset('images/dictionary.png') }}" alt="Dictionary" class="mb-3" style="height: 90px;">
-                    <h5 class="fw-bold text-coffee">Word Dictionary</h5>
+                    <h5 class="fw-bold text-coffee">Ybanag Words</h5>
                     <p class="text-muted small">Search Ybanag words with pronunciation and examples to deepen understanding.</p>
                 </div>
             </div>

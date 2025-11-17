@@ -19,33 +19,44 @@
 
     <div class="table-data">
         <div class="order">
-            <div class="head">
-                <h3>All Logs ({{ $logs->total() }})</h3>
-            </div>
 
-            <!-- 🔍 Search Form -->
-            <form class="row g-2 mb-3" method="GET" action="{{ route('admin.visitor_logs.index') }}">
-                <div class="col-md-4">
-                    <input 
-                        type="text" 
-                        name="ip" 
-                        class="form-control" 
-                        placeholder="Search by IP" 
-                        value="{{ request('ip') }}"
-                    >
+            <div class="head d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h3 class="mb-0">All Logs ({{ $logs->total() }})</h3>
+
+                <div class="dropdown">
+                    <button class="filter-btn d-flex align-items-center gap-1" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class='bx bx-filter-alt'></i>
+                        <span>
+                            @if(request('action') == 'dictionary')
+                                Dictionary
+                            @elseif(request('action') == 'translator')
+                                Translator
+                            @else
+                                Filter by Action
+                            @endif
+                        </span>
+                        <i class='bx bx-chevron-down'></i>
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="filterDropdown">
+                        <li>
+                            <a class="dropdown-item {{ request('action') == '' ? 'active' : '' }}" href="{{ route('admin.visitor_logs.index') }}">
+                                All Actions
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request('action') == 'dictionary' ? 'active' : '' }}" href="{{ route('admin.visitor_logs.index', ['action' => 'dictionary']) }}">
+                                Dictionary
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request('action') == 'translator' ? 'active' : '' }}" href="{{ route('admin.visitor_logs.index', ['action' => 'translator']) }}">
+                                Translator
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-                <div class="col-md-4">
-                    <select name="action" class="form-select">
-                        <option value="">-- Filter by Action --</option>
-                        <option value="dictionary" {{ request('action') == 'dictionary' ? 'selected' : '' }}>Ybanag Words</option>
-                        <option value="translator" {{ request('action') == 'translator' ? 'selected' : '' }}>Translator</option>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                    <a href="{{ route('admin.visitor_logs.index') }}" class="btn btn-secondary">Reset</a>
-                </div>
-            </form>
+            </div>
 
             <table>
                 <thead>
@@ -53,7 +64,7 @@
                         <th>IP Address</th>
                         <th>Action</th>
                         <!-- <th>User Agent</th> -->
-                        <th>Timestamp</th>
+                        <th>Time</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,7 +73,10 @@
                         <td>{{ $log->ip_address }}</td>
                         <td>
                             @foreach(explode(',', $log->actions) as $action)
-                                <span class="badge bg-primary">{{ ucfirst($action) }}</span>
+                                @php
+                                    $label = ($action == 'dictionary') ? 'Dictionary' : ucfirst($action);
+                                @endphp
+                                <span class="badge bg-primary">{{ $label }}</span>
                             @endforeach
                         </td>
                         <!-- <td>
@@ -70,7 +84,7 @@
                                 <div style="word-break: break-word;">{{ $ua }}</div>
                             @endforeach
                         </td> -->
-                        <td>{{ \Carbon\Carbon::parse($log->last_visit)->format('M d, Y h:i A') }}</td>
+                        <td>{{ \Carbon\Carbon::parse($log->last_visit)->diffForHumans() }}</td>
                     </tr>
                     @empty
                     <tr>
@@ -86,6 +100,46 @@
         </div>
     </div>
 </div>
+
+<!-- ✅ Styles -->
+<style>
+    .filter-btn {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 6px 14px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.2s ease-in-out;
+    }
+    .filter-btn:hover {
+        border-color: #86b7fe;
+        background-color: #f8f9fa;
+    }
+
+    .dropdown-menu {
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
+    .dropdown-item.active, 
+    .dropdown-item:active {
+        background-color: #0d6efd;
+        color: #fff;
+    }
+    .dropdown-item:hover {
+        background-color: #e9ecef;
+    }
+
+    .toggle-action-btn {
+        width: 34px !important;
+        height: 34px !important;
+        transition: transform 0.2s ease-in-out;
+    }
+    .toggle-action-btn:hover {
+        transform: scale(1.1);
+        background-color: #d1e7dd !important;
+    }
+</style>
 
 @endsection
 @endcan

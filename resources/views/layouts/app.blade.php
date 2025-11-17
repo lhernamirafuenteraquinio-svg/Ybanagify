@@ -70,7 +70,7 @@
         </p>
         <div class="mb-2">
             <a href="/" class="text-decoration-none me-3">Home</a>
-            <a href="/dictionary" class="text-decoration-none me-3">Ybanag Words</a>
+            <a href="/dictionary" class="text-decoration-none me-3">Dictionary</a>
             <a href="/translate" class="text-decoration-none me-3">Translate</a>
             <a href="/about" class="text-decoration-none">About</a>
         </div>

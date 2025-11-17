@@ -142,14 +142,12 @@ Route::namespace('App\Http\Controllers\Admin')->prefix('admin')->name('admin.')-
     Route::get('visitor-logs', 'VisitorLogController@index')->name('visitor_logs.index');
 
     // Team
-    Route::get('/team', 'TeamController@index')->name('team.index');
-    Route::get('/team/{id}/edit', 'TeamController@edit')->name('team.edit');
-    Route::put('/team/{id}', 'TeamController@update')->name('team.update');
-
+    // Route::get('/team', 'TeamController@index')->name('team.index');
+    // Route::get('/team/{id}/edit', 'TeamController@edit')->name('team.edit');
+    // Route::put('/team/{id}', 'TeamController@update')->name('team.update');
 
     Route::resource('team', 'TeamController');
     Route::resource('gallery', 'GalleryController');
-
 
     // Dashboard
     Route::get('/dashboard', 'DashboardController@index')->name('dashboard');
@@ -164,7 +162,19 @@ Route::namespace('App\Http\Controllers\Admin')->prefix('admin')->name('admin.')-
     Route::get('analytics', 'AnalyticsController@index')->name('analytics');
     
     Route::get('global-search', 'SearchController@search')->name('global-search');
-    
+
+    // Backup Management
+    Route::get('/backup', 'BackupController@index')->name('backup.index');
+    Route::post('/backup/run', 'BackupController@runBackup')->name('backup.run');
+    Route::post('/backup/clean', 'BackupController@cleanOldBackups')->name('backup.clean');
+    Route::get('/backup/download/{filename}', 'BackupController@download')->name('backup.download');
+
+    // Maintenance Mode
+    Route::post('/maintenance/clear-cache', 'BackupController@clearCache')->name('maintenance.clearCache');
+    Route::post('/maintenance/optimize', 'BackupController@optimize')->name('maintenance.optimize');
+    Route::post('/maintenance/storage', 'BackupController@storageUsage')->name('maintenance.storage');
+    Route::post('/maintenance/db', 'BackupController@dbHealth')->name('maintenance.db');
+    Route::post('/maintenance/clear-logs', 'BackupController@clearLogs')->name('maintenance.clearLogs');
     
 });
 
